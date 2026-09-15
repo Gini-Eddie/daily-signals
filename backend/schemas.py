@@ -4,7 +4,7 @@ Daily Signals - Pydantic Schemas for Validation and API Serialization
 from datetime import date, datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
-from backend.models import TrackingType
+from models import TrackingType
 
 
 # ------------------ CATEGORY SCHEMAS ------------------

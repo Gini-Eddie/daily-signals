@@ -11,7 +11,7 @@ Distinguish execution from outcomes:
 """
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple, Optional
-from backend.models import Habit, HabitEntry, TrackingType
+from models import Habit, HabitEntry, TrackingType
 
 
 def evaluate_habit_status(habit: Habit, entry: Optional[HabitEntry]) -> Tuple[str, float, float]:

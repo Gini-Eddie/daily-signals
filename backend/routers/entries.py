@@ -4,9 +4,9 @@ Fast daily logging: save/update entry for a given habit and date.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import HabitEntry, Habit
-from backend.schemas import HabitEntryCreate, HabitEntryResponse
+from database import get_db
+from models import HabitEntry, Habit
+from schemas import HabitEntryCreate, HabitEntryResponse
 
 router = APIRouter(prefix="/habit-entries", tags=["Habit Entries"])
 

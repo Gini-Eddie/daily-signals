@@ -16,7 +16,7 @@ from sqlalchemy import (
     Date, DateTime, ForeignKey, Enum as SQLEnum, JSON, UniqueConstraint, Index
 )
 from sqlalchemy.orm import relationship
-from backend.database import Base
+from database import Base
 
 
 class TrackingType(str, Enum):

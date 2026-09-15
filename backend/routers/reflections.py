@@ -10,9 +10,9 @@ from datetime import date
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import DailyReflection
-from backend.schemas import DailyReflectionCreate, DailyReflectionResponse
+from database import get_db
+from models import DailyReflection
+from schemas import DailyReflectionCreate, DailyReflectionResponse
 
 router = APIRouter(prefix="/reflections", tags=["Daily Reflections"])
 

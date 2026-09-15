@@ -3,7 +3,7 @@ Daily Signals - Database Connection & Session Management
 """
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from backend.config import settings
+from config import settings
 
 # Create PostgreSQL SQLAlchemy Engine
 # Note: connect_args can include options if using SQLite for test or PostgreSQL for prod

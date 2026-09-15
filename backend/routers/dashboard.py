@@ -4,10 +4,10 @@ Daily Signals - Dashboard & History Router
 from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import Habit, HabitEntry, DailySignal, DailyReflection, TrackingType
-from backend.schemas import TodayDashboardResponse, HabitWithExecution, HabitResponse, HabitEntryResponse
-from backend.services.execution import evaluate_habit_status, calculate_daily_execution_score
+from database import get_db
+from models import Habit, HabitEntry, DailySignal, DailyReflection, TrackingType
+from schemas import TodayDashboardResponse, HabitWithExecution, HabitResponse, HabitEntryResponse
+from services.execution import evaluate_habit_status, calculate_daily_execution_score
 
 router = APIRouter(tags=["Dashboard & History"])
 

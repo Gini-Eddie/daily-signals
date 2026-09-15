@@ -8,9 +8,9 @@ from typing import List
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import DailySignal
-from backend.schemas import DailySignalCreate, DailySignalUpdate, DailySignalResponse
+from database import get_db
+from models import DailySignal
+from schemas import DailySignalCreate, DailySignalUpdate, DailySignalResponse
 
 router = APIRouter(prefix="/daily-signals", tags=["Daily Signals"])
 

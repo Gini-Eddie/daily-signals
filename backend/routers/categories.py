@@ -4,9 +4,9 @@ Daily Signals - Categories Router
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import Category, User
-from backend.schemas import CategoryCreate, CategoryUpdate, CategoryResponse
+from database import get_db
+from models import Category, User
+from schemas import CategoryCreate, CategoryUpdate, CategoryResponse
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 

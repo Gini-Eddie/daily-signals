@@ -5,10 +5,10 @@ from datetime import date, timedelta
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import Habit, HabitEntry, TrackingType
-from backend.schemas import WeeklyAnalyticsResponse, WeeklyReviewResponse, HabitWeeklyMetric
-from backend.services.execution import evaluate_habit_status, generate_weekly_review_diagnosis
+from database import get_db
+from models import Habit, HabitEntry, TrackingType
+from schemas import WeeklyAnalyticsResponse, WeeklyReviewResponse, HabitWeeklyMetric
+from services.execution import evaluate_habit_status, generate_weekly_review_diagnosis
 
 router = APIRouter(prefix="/analytics", tags=["Analytics & Review"])
 

@@ -4,9 +4,9 @@ Daily Signals - Habits Router
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import Habit, Category
-from backend.schemas import HabitCreate, HabitUpdate, HabitResponse
+from database import get_db
+from models import Habit, Category
+from schemas import HabitCreate, HabitUpdate, HabitResponse
 
 router = APIRouter(prefix="/habits", tags=["Habits"])
 

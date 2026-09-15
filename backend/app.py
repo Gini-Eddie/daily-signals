@@ -7,10 +7,10 @@ Philosophy:
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.config import settings
-from backend.database import engine, Base, SessionLocal
-from backend.models import User, Category, Habit, TrackingType
-from backend.routers import categories, habits, entries, signals, reflections, dashboard, analytics
+from config import settings
+from database import engine, Base, SessionLocal
+from models import User, Category, Habit, TrackingType
+from routers import categories, habits, entries, signals, reflections, dashboard, analytics
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
