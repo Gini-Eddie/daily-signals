@@ -4,6 +4,7 @@ Daily Signals - FastAPI Application Entry Point
 Philosophy:
 "Measure execution. Study the trend. Improve the system."
 """
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
@@ -155,3 +156,10 @@ def startup_event():
         seed_starter_data()
     except Exception as e:
         print(f"Starter seed check: {e}")
+
+
+# --- HUGGING FACE SPACES INTEGRATION ---
+# The Gradio SDK automatically runs `app.py`.
+# We hijack this to run our FastAPI app on the required port (7860).
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
