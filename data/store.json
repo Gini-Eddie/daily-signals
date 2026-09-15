@@ -1,0 +1,428 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Spiritual",
+      "color": "#8b5cf6",
+      "display_order": 1
+    },
+    {
+      "id": 2,
+      "name": "Health",
+      "color": "#10b981",
+      "display_order": 2
+    },
+    {
+      "id": 3,
+      "name": "Personal Development",
+      "color": "#0ea5e9",
+      "display_order": 3
+    },
+    {
+      "id": 4,
+      "name": "AI Engineering / Career",
+      "color": "#f59e0b",
+      "display_order": 4
+    },
+    {
+      "id": 5,
+      "name": "Content / Positioning",
+      "color": "#ec4899",
+      "display_order": 5
+    },
+    {
+      "id": 6,
+      "name": "Business",
+      "color": "#6366f1",
+      "display_order": 6
+    }
+  ],
+  "habits": [
+    {
+      "id": 1,
+      "category_id": 1,
+      "name": "Morning Prayer",
+      "description": "Controllable spiritual devotion to start day with focus",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 1
+    },
+    {
+      "id": 2,
+      "category_id": 1,
+      "name": "Bible Study / Quiet Time",
+      "description": "Scriptural reading and contemplative quiet time",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 2
+    },
+    {
+      "id": 3,
+      "category_id": 2,
+      "name": "Exercise",
+      "description": "Cardio or functional workout session",
+      "tracking_type": "MINIMUM_TARGET",
+      "unit": "minutes",
+      "minimum_value": 15,
+      "target_value": 45,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 3
+    },
+    {
+      "id": 4,
+      "category_id": 2,
+      "name": "Push-ups",
+      "description": "Chest and arm strength push repetitions",
+      "tracking_type": "QUANTITY",
+      "unit": "reps",
+      "target_value": 60,
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 4
+    },
+    {
+      "id": 5,
+      "category_id": 2,
+      "name": "Sit-ups",
+      "description": "Core abdominal conditioning repetitions",
+      "tracking_type": "QUANTITY",
+      "unit": "reps",
+      "target_value": 10,
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 5
+    },
+    {
+      "id": 6,
+      "category_id": 3,
+      "name": "Journaling",
+      "description": "Daily clarity writing and thought capture",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 6
+    },
+    {
+      "id": 7,
+      "category_id": 3,
+      "name": "Reading",
+      "description": "Deep reading in non-fiction and technical books",
+      "tracking_type": "MINIMUM_TARGET",
+      "unit": "pages",
+      "minimum_value": 5,
+      "target_value": 10,
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 7
+    },
+    {
+      "id": 8,
+      "category_id": 3,
+      "name": "Daily Planning",
+      "description": "Intentional calendar review and task triage",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "is_active": true,
+      "display_order": 8
+    },
+    {
+      "id": 9,
+      "category_id": 4,
+      "name": "AI Engineering Block",
+      "description": "Deep focus coding on ML pipelines, agents, and models",
+      "tracking_type": "MINIMUM_TARGET",
+      "unit": "minutes",
+      "minimum_value": 20,
+      "target_value": 60,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 9
+    },
+    {
+      "id": 10,
+      "category_id": 4,
+      "name": "Course / Learning Time",
+      "description": "Structured technical lecture or documentation study",
+      "tracking_type": "MINIMUM_TARGET",
+      "unit": "minutes",
+      "minimum_value": 30,
+      "target_value": 60,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 10
+    },
+    {
+      "id": 11,
+      "category_id": 4,
+      "name": "Career Opportunity Actions",
+      "description": "Direct strategic career actions taken",
+      "tracking_type": "QUANTITY",
+      "unit": "actions",
+      "target_value": 2,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 11
+    },
+    {
+      "id": 12,
+      "category_id": 4,
+      "name": "Job Applications",
+      "description": "High-quality tailored technical applications submitted",
+      "tracking_type": "QUANTITY",
+      "unit": "applications",
+      "target_value": 2,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 12
+    },
+    {
+      "id": 13,
+      "category_id": 4,
+      "name": "Professional Outreach",
+      "description": "Direct emails/messages sent to founders or engineers",
+      "tracking_type": "QUANTITY",
+      "unit": "outreaches",
+      "target_value": 3,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 13
+    },
+    {
+      "id": 14,
+      "category_id": 5,
+      "name": "Content Created",
+      "description": "Engineering blog post draft or technical breakdown written",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 14
+    },
+    {
+      "id": 15,
+      "category_id": 5,
+      "name": "Content Published",
+      "description": "Public post shared on LinkedIn / Twitter / Blog",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        1,
+        3,
+        5
+      ],
+      "is_active": true,
+      "display_order": 15
+    },
+    {
+      "id": 16,
+      "category_id": 5,
+      "name": "Tomorrow's Content Prepared / Scheduled",
+      "description": "Queued up next day piece in advance",
+      "tracking_type": "BINARY",
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "is_active": true,
+      "display_order": 16
+    },
+    {
+      "id": 17,
+      "category_id": 6,
+      "name": "PropNode Daily Execution",
+      "description": "Deep focused block advancing PropNode product features",
+      "tracking_type": "MINIMUM_TARGET",
+      "unit": "minutes",
+      "minimum_value": 30,
+      "target_value": 90,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 17
+    },
+    {
+      "id": 18,
+      "category_id": 6,
+      "name": "Prospect Calls",
+      "description": "Real-time client/prospect conversations conducted",
+      "tracking_type": "QUANTITY",
+      "unit": "calls",
+      "target_value": 5,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 18
+    },
+    {
+      "id": 19,
+      "category_id": 6,
+      "name": "Follow-ups",
+      "description": "Persistent pipeline follow-ups delivered",
+      "tracking_type": "QUANTITY",
+      "unit": "outreaches",
+      "target_value": 5,
+      "applicable_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "is_active": true,
+      "display_order": 19
+    }
+  ],
+  "entries": [],
+  "signals": [
+    {
+      "id": 1,
+      "signal_date": "2026-09-08",
+      "order_position": 1,
+      "title": "Design forecasting pipeline",
+      "category_name": "AI Engineering",
+      "description": "Implement time-series cross-validation script for latency testing",
+      "target_quantity": "60 mins",
+      "is_completed": false
+    },
+    {
+      "id": 2,
+      "signal_date": "2026-09-08",
+      "order_position": 2,
+      "title": "Apply to 2 ML jobs and contact 1 recruiter",
+      "category_name": "Opportunity",
+      "description": "Tailor CV to agentic workflows and message London recruiter",
+      "target_quantity": "2 apps + 1 message",
+      "is_completed": false
+    },
+    {
+      "id": 3,
+      "signal_date": "2026-09-08",
+      "order_position": 3,
+      "title": "Call 5 prospects",
+      "category_name": "PropNode",
+      "description": "Follow up with warm demo leads from last Thursday",
+      "target_quantity": "5 calls",
+      "is_completed": false
+    }
+  ],
+  "reflections": [],
+  "user_profile": {
+    "name": "Ginika",
+    "role": "Daily Execution Lead",
+    "motto": "Focus on controllable daily actions",
+    "checkins": []
+  },
+  "publications": {}
+}
