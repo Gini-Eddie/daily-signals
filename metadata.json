@@ -1,0 +1,6 @@
+{
+  "name": "Daily Signals",
+  "description": "Personal execution, habit, and progress tracking system focused on controllable daily actions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
