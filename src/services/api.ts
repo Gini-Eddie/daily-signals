@@ -11,7 +11,7 @@ import {
   DayPublication,
 } from "../types";
 
-const API_BASE = "/api";
+const API_BASE = "https://daily-signals-api.onrender.com/api";
 
 export const api = {
   // User Profile & Mini-Authentication
