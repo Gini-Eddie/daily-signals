@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import engine, Base, SessionLocal
 from models import User, Category, Habit, TrackingType
-from routers import categories, habits, entries, signals, reflections, dashboard, analytics
+from routers import categories, habits, entries, signals, reflections, dashboard, analytics, user
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -31,6 +31,7 @@ app.add_middleware(
 )
 
 # Mount REST API Routers
+app.include_router(user.router, prefix=settings.API_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_PREFIX)
 app.include_router(habits.router, prefix=settings.API_PREFIX)
 app.include_router(categories.router, prefix=settings.API_PREFIX)
