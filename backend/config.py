@@ -1,6 +1,7 @@
 """
 Daily Signals - Configuration
 """
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -9,9 +10,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Daily Signals API"
     VERSION: str = "1.0.0"
     API_PREFIX: str = "/api"
-    
-    # PostgreSQL Database URL
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/daily_signals"
+
+    # Grab the URL from the environment, fallback to localhost for local testing
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/dbname")
     
     # Execution scoring weights
     MINIMUM_ACHIEVED_BASE_SCORE: float = 75.0  # Percentage credit awarded when minimum is met
