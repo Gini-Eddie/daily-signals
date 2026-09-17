@@ -1,15 +1,11 @@
-import React, { useState } from "react";
-import { 
-  Check, 
-  Minus, 
-  Plus, 
-  MessageSquare, 
-  AlertCircle,
-  Sparkles,
-  ChevronDown,
-  ChevronUp
+import React, { useState, useEffect } from "react";
+import {
+  Check,
+  Minus,
+  Plus,
+  MessageSquare
 } from "lucide-react";
-import { HabitWithExecution, TrackingType } from "../../types";
+import { HabitWithExecution } from "../../types";
 import { api } from "../../services/api";
 
 interface FastDailyLoggingProps {
@@ -25,78 +21,140 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
 }) => {
   const [activeNoteHabitId, setActiveNoteHabitId] = useState<number | null>(null);
   const [notesState, setNotesState] = useState<Record<number, string>>({});
-  const [savingHabitId, setSavingHabitId] = useState<number | null>(null);
 
-  // Group habits by category
-  const categoriesMap = new Map<string, { id: number; color: string; habits: HabitWithExecution[] }>();
+  // --- OPTIMISTIC UI STATE ---
+  const [localHabits, setLocalHabits] = useState<HabitWithExecution[]>(habits);
+  const [inFlightRequests, setInFlightRequests] = useState<Record<number, number>>({});
 
-  habits.forEach((hwe) => {
-    const catName = hwe.habit.category?.name || "Uncategorized";
-    const catColor = hwe.habit.category?.color || "#64748b";
-    const catId = hwe.habit.category?.id || 0;
+  // Sync server data to local state seamlessly
+  useEffect(() => {
+    setLocalHabits((prev) =>
+      habits.map((serverHabit) => {
+        // If we are currently saving this habit, keep the local optimistic version on screen
+        if (inFlightRequests[serverHabit.habit.id] > 0) {
+          return prev.find((p) => p.habit.id === serverHabit.habit.id) || serverHabit;
+        }
+        return serverHabit;
+      })
+    );
+  }, [habits, inFlightRequests]);
 
-    if (!categoriesMap.has(catName)) {
-      categoriesMap.set(catName, { id: catId, color: catColor, habits: [] });
-    }
-    categoriesMap.get(catName)!.habits.push(hwe);
-  });
+  const trackRequestStart = (id: number) => {
+    setInFlightRequests((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+  };
 
-  const categoryGroups = Array.from(categoriesMap.entries());
+  const trackRequestEnd = (id: number) => {
+    setInFlightRequests((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) }));
+  };
 
-  // Fast logging handlers
+  // Local Evaluator for instant Badge & Progress updates
+  const applyOptimisticUpdate = (habitId: number, newVal: number, newBinary: boolean) => {
+    setLocalHabits((prev) =>
+      prev.map((hwe) => {
+        if (hwe.habit.id !== habitId) return hwe;
+
+        const habit = hwe.habit;
+        let newStatus = "Not Started";
+
+        if (habit.tracking_type === "BINARY") {
+          newStatus = newBinary ? "Completed" : "Not Completed";
+        } else if (habit.tracking_type === "QUANTITY") {
+          const target = habit.target_value || 1;
+          if (newVal <= 0) newStatus = "Not Started";
+          else if (newVal < target) newStatus = "Below Target";
+          else if (newVal === target) newStatus = "Target Achieved";
+          else newStatus = "Target Exceeded";
+        } else if (habit.tracking_type === "MINIMUM_TARGET") {
+          const min = habit.minimum_value || 1;
+          const target = habit.target_value || min * 2;
+          if (newVal <= 0) newStatus = "Not Started";
+          else if (newVal < min) newStatus = "Below Minimum";
+          else if (newVal < target) newStatus = "Minimum Achieved";
+          else if (newVal === target) newStatus = "Target Achieved";
+          else newStatus = "Target Exceeded";
+        }
+
+        return {
+          ...hwe,
+          actual_value: newVal,
+          binary_completed: newBinary,
+          status: newStatus as any,
+        };
+      })
+    );
+  };
+
+  // --- OPTIMISTIC LOGGING HANDLERS ---
   const handleBinaryToggle = async (hwe: HabitWithExecution) => {
     const newStatus = !hwe.binary_completed;
-    setSavingHabitId(hwe.habit.id);
+    const newVal = newStatus ? 1 : 0;
+
+    // 1. Instantly update the UI
+    applyOptimisticUpdate(hwe.habit.id, newVal, newStatus);
+    trackRequestStart(hwe.habit.id);
+
+    // 2. Silently process on backend
     try {
       await api.logHabitEntry({
         habit_id: hwe.habit.id,
         entry_date: currentDate,
         binary_completed: newStatus,
-        actual_value: newStatus ? 1 : 0,
+        actual_value: newVal,
       });
       onRefresh();
     } catch (err) {
       console.error("Failed to log binary habit", err);
+      onRefresh(); // Revert to server truth on failure
     } finally {
-      setSavingHabitId(null);
+      trackRequestEnd(hwe.habit.id);
     }
   };
 
   const handleAdjustQuantity = async (hwe: HabitWithExecution, delta: number) => {
     const currentVal = hwe.actual_value || 0;
     const newVal = Math.max(0, currentVal + delta);
-    setSavingHabitId(hwe.habit.id);
+    const newBinary = newVal > 0;
+
+    applyOptimisticUpdate(hwe.habit.id, newVal, newBinary);
+    trackRequestStart(hwe.habit.id);
+
     try {
       await api.logHabitEntry({
         habit_id: hwe.habit.id,
         entry_date: currentDate,
         actual_value: newVal,
-        binary_completed: newVal > 0,
+        binary_completed: newBinary,
       });
       onRefresh();
     } catch (err) {
       console.error("Failed to adjust quantity", err);
+      onRefresh();
     } finally {
-      setSavingHabitId(null);
+      trackRequestEnd(hwe.habit.id);
     }
   };
 
   const handleDirectNumericInput = async (hwe: HabitWithExecution, rawValue: string) => {
     const num = parseFloat(rawValue);
     const validVal = isNaN(num) ? 0 : Math.max(0, num);
-    setSavingHabitId(hwe.habit.id);
+    const newBinary = validVal > 0;
+
+    applyOptimisticUpdate(hwe.habit.id, validVal, newBinary);
+    trackRequestStart(hwe.habit.id);
+
     try {
       await api.logHabitEntry({
         habit_id: hwe.habit.id,
         entry_date: currentDate,
         actual_value: validVal,
-        binary_completed: validVal > 0,
+        binary_completed: newBinary,
       });
       onRefresh();
     } catch (err) {
       console.error("Failed to save direct numeric input", err);
+      onRefresh();
     } finally {
-      setSavingHabitId(null);
+      trackRequestEnd(hwe.habit.id);
     }
   };
 
@@ -117,7 +175,22 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
     }
   };
 
-  // Status Badge Rendering with semantic styling
+  // Group habits by category using our local optimistic state
+  const categoriesMap = new Map<string, { id: number; color: string; habits: HabitWithExecution[] }>();
+
+  localHabits.forEach((hwe) => {
+    const catName = hwe.habit.category?.name || "Uncategorized";
+    const catColor = hwe.habit.category?.color || "#64748b";
+    const catId = hwe.habit.category?.id || 0;
+
+    if (!categoriesMap.has(catName)) {
+      categoriesMap.set(catName, { id: catId, color: catColor, habits: [] });
+    }
+    categoriesMap.get(catName)!.habits.push(hwe);
+  });
+
+  const categoryGroups = Array.from(categoriesMap.entries());
+
   const renderStatusBadge = (status: string, isScheduled: boolean) => {
     if (!isScheduled) {
       return (
@@ -131,26 +204,26 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
       case "Completed":
       case "Target Achieved":
         return (
-          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-xs transition-all">
             Target Achieved
           </span>
         );
       case "Target Exceeded":
         return (
-          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 shadow-xs transition-all">
             Target Exceeded
           </span>
         );
       case "Minimum Achieved":
         return (
-          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 shadow-xs transition-all">
             Minimum Achieved
           </span>
         );
       case "Below Minimum":
       case "Below Target":
         return (
-          <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+          <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 transition-all">
             In Progress
           </span>
         );
@@ -158,7 +231,7 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
       case "Not Completed":
       default:
         return (
-          <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+          <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 transition-all">
             Not Started
           </span>
         );
@@ -167,19 +240,11 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Category Groups */}
       {categoryGroups.map(([categoryName, { color, habits: catHabits }]) => (
-        <div
-          key={categoryName}
-          className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs"
-        >
-          {/* Category Header */}
+        <div key={categoryName} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="bg-slate-50/80 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
               <h3 className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide uppercase">
                 {categoryName}
               </h3>
@@ -189,7 +254,6 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
             </div>
           </div>
 
-          {/* Habit Rows */}
           <div className="divide-y divide-slate-100">
             {catHabits.map((hwe) => {
               const { habit, entry, status, is_scheduled_today, actual_value, binary_completed } = hwe;
@@ -199,7 +263,7 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
               return (
                 <div
                   key={habit.id}
-                  className={`p-4 sm:p-5 transition-colors ${
+                  className={`p-4 sm:p-5 transition-colors duration-200 ${
                     !is_scheduled_today
                       ? "bg-slate-50/40 opacity-80"
                       : status === "Target Achieved" || status === "Target Exceeded" || status === "Completed"
@@ -210,7 +274,6 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                   }`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    {/* Left: Habit Info & Targets */}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="text-sm font-bold text-slate-900 truncate">
@@ -220,38 +283,26 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                       </div>
 
                       {habit.description && (
-                        <p className="text-xs text-slate-500 mb-1 line-clamp-1">
-                          {habit.description}
-                        </p>
+                        <p className="text-xs text-slate-500 mb-1 line-clamp-1">{habit.description}</p>
                       )}
 
-                      {/* Threshold info */}
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-mono-num">
                         {habit.tracking_type === "BINARY" ? (
                           <span className="text-slate-400 text-[11px]">Binary Check</span>
                         ) : habit.tracking_type === "MINIMUM_TARGET" ? (
                           <>
-                            <span>
-                              Floor Min: <strong className="text-slate-700">{habit.minimum_value}</strong> {habit.unit}
-                            </span>
+                            <span>Floor Min: <strong className="text-slate-700">{habit.minimum_value}</strong> {habit.unit}</span>
                             <span className="text-slate-300">•</span>
-                            <span>
-                              Target: <strong className="text-slate-700">{habit.target_value}</strong> {habit.unit}
-                            </span>
+                            <span>Target: <strong className="text-slate-700">{habit.target_value}</strong> {habit.unit}</span>
                           </>
                         ) : (
-                          <span>
-                            Target: <strong className="text-slate-700">{habit.target_value}</strong> {habit.unit}
-                          </span>
+                          <span>Target: <strong className="text-slate-700">{habit.target_value}</strong> {habit.unit}</span>
                         )}
 
-                        {/* Note toggle */}
                         <button
                           onClick={() => setActiveNoteHabitId(isNoteOpen ? null : habit.id)}
-                          className={`inline-flex items-center space-x-1 text-[11px] px-1.5 py-0.5 rounded transition-colors ${
-                            hasNote
-                              ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-                              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                          className={`inline-flex items-center space-x-1 text-[11px] px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                            hasNote ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                           }`}
                         >
                           <MessageSquare className="w-3 h-3" />
@@ -260,44 +311,31 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: Interactive Logging Controls */}
                     <div className="flex items-center space-x-2 sm:space-x-3 self-end md:self-auto shrink-0">
                       {habit.tracking_type === "BINARY" ? (
-                        /* Binary Check Toggle Button */
                         <button
                           onClick={() => handleBinaryToggle(hwe)}
-                          disabled={savingHabitId === habit.id}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-xs cursor-pointer ${
-                            binary_completed
-                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                              : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300"
+                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95 ${
+                            binary_completed ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300"
                           }`}
                         >
-                          <div
-                            className={`w-4 h-4 rounded flex items-center justify-center border ${
-                              binary_completed
-                                ? "bg-white border-white text-emerald-700"
-                                : "border-slate-400"
-                            }`}
-                          >
+                          <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                              binary_completed ? "bg-white border-white text-emerald-700" : "border-slate-400"
+                            }`}>
                             {binary_completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
                           <span>{binary_completed ? "Completed" : "Mark Done"}</span>
                         </button>
                       ) : (
-                        /* Quantitative Logging Controls */
                         <div className="flex items-center space-x-1 sm:space-x-2 bg-slate-50 border border-slate-200 p-1 rounded-lg">
-                          {/* Decrement Button */}
                           <button
                             onClick={() => handleAdjustQuantity(hwe, -1)}
-                            disabled={actual_value <= 0 || savingHabitId === habit.id}
-                            className="w-7 h-7 flex items-center justify-center rounded bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
-                            title="Decrement by 1"
+                            disabled={actual_value <= 0}
+                            className="w-7 h-7 flex items-center justify-center rounded bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer active:scale-90 transition-transform"
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* Direct Input Field */}
                           <div className="flex items-center">
                             <input
                               type="number"
@@ -305,32 +343,22 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                               value={actual_value === 0 ? "" : actual_value}
                               placeholder="0"
                               onChange={(e) => handleDirectNumericInput(hwe, e.target.value)}
-                              className="w-14 sm:w-16 text-center text-xs sm:text-sm font-bold font-mono-num text-slate-900 bg-white border border-slate-300 rounded py-1 px-1 focus:ring-1 focus:ring-slate-900 focus:outline-hidden"
+                              className="w-14 sm:w-16 text-center text-xs sm:text-sm font-bold font-mono-num text-slate-900 bg-white border border-slate-300 rounded py-1 px-1 focus:ring-1 focus:ring-slate-900 focus:outline-hidden transition-all"
                             />
-                            {habit.unit && (
-                              <span className="text-[11px] text-slate-500 font-mono-num ml-1 hidden sm:inline">
-                                {habit.unit}
-                              </span>
-                            )}
+                            {habit.unit && <span className="text-[11px] text-slate-500 font-mono-num ml-1 hidden sm:inline">{habit.unit}</span>}
                           </div>
 
-                          {/* Quick Increment Buttons */}
                           <button
                             onClick={() => handleAdjustQuantity(hwe, 1)}
-                            disabled={savingHabitId === habit.id}
-                            className="w-7 h-7 flex items-center justify-center rounded bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer"
-                            title="Increment by 1"
+                            className="w-7 h-7 flex items-center justify-center rounded bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer active:scale-90 transition-transform"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* Step Increments for larger quantities */}
                           {(habit.target_value || 0) >= 15 && (
                             <button
                               onClick={() => handleAdjustQuantity(hwe, 5)}
-                              disabled={savingHabitId === habit.id}
-                              className="px-1.5 py-1 text-[11px] font-mono-num font-bold rounded bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer"
-                              title="Add +5"
+                              className="px-1.5 py-1 text-[11px] font-mono-num font-bold rounded bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer active:scale-90 transition-transform"
                             >
                               +5
                             </button>
@@ -338,9 +366,7 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                           {(habit.target_value || 0) >= 30 && (
                             <button
                               onClick={() => handleAdjustQuantity(hwe, 15)}
-                              disabled={savingHabitId === habit.id}
-                              className="px-1.5 py-1 text-[11px] font-mono-num font-bold rounded bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer"
-                              title="Add +15"
+                              className="px-1.5 py-1 text-[11px] font-mono-num font-bold rounded bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 cursor-pointer active:scale-90 transition-transform"
                             >
                               +15
                             </button>
@@ -350,16 +376,13 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                     </div>
                   </div>
 
-                  {/* Optional Note Row */}
                   {isNoteOpen && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                       <input
                         type="text"
                         placeholder="Log execution note, context, or observation..."
                         value={notesState[habit.id] ?? (entry?.notes || "")}
-                        onChange={(e) =>
-                          setNotesState({ ...notesState, [habit.id]: e.target.value })
-                        }
+                        onChange={(e) => setNotesState({ ...notesState, [habit.id]: e.target.value })}
                         className="flex-1 text-xs border border-slate-300 rounded-md px-3 py-1.5 focus:ring-1 focus:ring-slate-900 focus:outline-hidden"
                       />
                       <div className="flex items-center space-x-2">
@@ -379,7 +402,6 @@ export const FastDailyLogging: React.FC<FastDailyLoggingProps> = ({
                     </div>
                   )}
 
-                  {/* Read-only note preview when closed */}
                   {!isNoteOpen && entry?.notes && (
                     <div className="mt-2 text-xs text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-100 italic flex items-center space-x-1.5">
                       <span className="font-semibold not-italic text-slate-400">Note:</span>
