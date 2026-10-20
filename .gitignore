@@ -10,3 +10,12 @@ coverage/
 venv/
 bun.lock
 .env
+data/account.json*
+__pycache__/
+*.pyc
+.test-python/
+data/backups/
+data/owner-access.txt
+data/hosted-owner-access.txt
+data/weekly-goals.json*
+tests/*-preview.png

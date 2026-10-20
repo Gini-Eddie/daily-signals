@@ -75,7 +75,7 @@ class HabitResponse(HabitBase):
 class HabitEntryBase(BaseModel):
     habit_id: int
     entry_date: date
-    actual_value: Optional[float] = 0.0
+    actual_value: Optional[float] = Field(0.0, ge=0, allow_inf_nan=False)
     binary_completed: Optional[bool] = False
     notes: Optional[str] = None
 
@@ -168,6 +168,7 @@ class TodayDashboardResponse(BaseModel):
     signals: List[DailySignalResponse]
     habits: List[HabitWithExecution]
     reflection: Optional[DailyReflectionResponse] = None
+    publication: Optional[Dict[str, Any]] = None
 
 
 # ------------------ ANALYTICS & REVIEW SCHEMAS ------------------

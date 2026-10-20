@@ -1,3 +1,5 @@
+import { WeeklyGoalsView } from "./components/Goals/WeeklyGoalsView";
+import { EncouragementCard } from "./components/EncouragementCard";
 import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "./components/Header";
 import { HeaderStats } from "./components/TodayDashboard/HeaderStats";
@@ -17,7 +19,7 @@ import { api } from "./services/api";
 
 export function App() {
   const [activeTab, setActiveTab] = useState<
-    "today" | "history" | "analytics" | "review" | "habits" | "backend"
+    "today" | "history" | "analytics" | "review" | "habits" | "goals" | "backend"
   >("today");
 
   const [dashboard, setDashboard] = useState<TodayDashboard | null>(null);
@@ -62,8 +64,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    loadTodayDashboard();
-  }, [loadTodayDashboard]);
+    if (activeTab === "today") loadTodayDashboard();
+  }, [loadTodayDashboard, activeTab]);
+
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [activeTab]);
 
   const handleSaveProfile = async (data: { name: string; role?: string; motto?: string }) => {
     const updated = await api.saveUserProfile(data);
@@ -182,6 +186,8 @@ export function App() {
 
                 {/* 1. Header Execution Stats & Metrics */}
                 <HeaderStats dashboard={dashboard} />
+                <EncouragementCard onGoals={() => setActiveTab("goals")} />
+                <WeeklyGoalsView compact onOpen={() => setActiveTab("goals")} />
 
                 {/* 2. Today's 3 Signals */}
                 <SignalsSection
@@ -198,11 +204,11 @@ export function App() {
                         Daily Execution Logging
                       </h3>
                       <p className="text-xs text-slate-500">
-                        Record daily progress with rapid increment buttons or direct numbers
+                        Small actions add up. Record what you did today.
                       </p>
                     </div>
                     <span className="text-xs text-slate-400 font-mono-num hidden sm:inline">
-                      Changes auto-save immediately
+                      Values save when you finish editing
                     </span>
                   </div>
 
@@ -235,6 +241,7 @@ export function App() {
 
         {/* Tab 5: Habits Management View */}
         {activeTab === "habits" && <HabitManagementView />}
+        {activeTab === "goals" && <WeeklyGoalsView />}
 
         {/* Tab 6: Python FastAPI Specification Inspector */}
         {activeTab === "backend" && <BackendCodeModal />}

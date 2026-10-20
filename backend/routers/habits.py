@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Habit, Category
 from schemas import HabitCreate, HabitUpdate, HabitResponse
+from services.validation import validate_habit
 
 router = APIRouter(prefix="/habits", tags=["Habits"])
 
@@ -36,6 +37,7 @@ def get_habits(
 
 @router.post("", response_model=HabitResponse, status_code=status.HTTP_201_CREATED)
 def create_habit(payload: HabitCreate, db: Session = Depends(get_db)):
+    validate_habit(payload.model_dump())
     user_id = get_current_user_id()
 
     # Rule verification: Execution vs Outcome
@@ -74,6 +76,7 @@ def update_habit(habit_id: int, payload: HabitUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Habit not found")
 
     update_data = payload.model_dump(exclude_unset=True)
+    validate_habit({**{key: getattr(habit, key) for key in ("name", "tracking_type", "applicable_days", "target_value", "minimum_value")}, **update_data})
     for field, value in update_data.items():
         setattr(habit, field, value)
 

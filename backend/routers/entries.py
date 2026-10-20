@@ -31,8 +31,10 @@ def log_or_update_entry(payload: HabitEntryCreate, db: Session = Depends(get_db)
     ).first()
 
     if entry:
-        entry.actual_value = payload.actual_value
-        entry.binary_completed = payload.binary_completed
+        if "actual_value" in payload.model_fields_set:
+            entry.actual_value = payload.actual_value
+        if "binary_completed" in payload.model_fields_set:
+            entry.binary_completed = payload.binary_completed
         if payload.notes is not None:
             entry.notes = payload.notes
     else:

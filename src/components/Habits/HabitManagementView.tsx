@@ -89,8 +89,8 @@ export const HabitManagementView: React.FC = () => {
     setFormCategoryId(h.category_id || undefined);
     setFormTrackingType(h.tracking_type);
     setFormUnit(h.unit || "");
-    setFormMinimumValue(h.minimum_value ? String(h.minimum_value) : "");
-    setFormTargetValue(h.target_value ? String(h.target_value) : "");
+    setFormMinimumValue(h.minimum_value != null ? String(h.minimum_value) : "");
+    setFormTargetValue(h.target_value != null ? String(h.target_value) : "");
     setFormDays(h.applicable_days || [0, 1, 2, 3, 4, 5, 6]);
     setFormIsActive(h.is_active);
     setFormError(null);
@@ -125,6 +125,13 @@ export const HabitManagementView: React.FC = () => {
       return;
     }
 
+    if (!formName.trim()) { setFormError("Enter a habit name."); return; }
+    if (formTrackingType !== "BINARY" && (!Number.isFinite(Number(formTargetValue)) || Number(formTargetValue) <= 0)) {
+      setFormError("Set a target greater than zero."); return;
+    }
+    if (formTrackingType === "MINIMUM_TARGET" && (!formMinimumValue || !Number.isFinite(Number(formMinimumValue)) || Number(formMinimumValue) < 0 || Number(formMinimumValue) > Number(formTargetValue))) {
+      setFormError("Minimum must be between zero and your target."); return;
+    }
     setIsSaving(true);
     try {
       const payload: Partial<Habit> = {
@@ -189,13 +196,10 @@ export const HabitManagementView: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-1">
-              Core Discipline: Controllable Actions vs. Outcomes
+              Build a rhythm that works for you
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-              Daily Signals isolates <strong>leading execution indicators</strong> from outcome results.
-              Do not treat passive outcomes like <em>"Have ₦500,000 for rent"</em> or <em>"Save $1,000"</em> as daily habits.
-              Instead, measure the direct actions that build momentum:
-              <span className="text-slate-100 font-semibold"> Prospect calls, pipeline follow-ups, AI engineering blocks, and physical workouts.</span>
+              Give each habit a clear target, a realistic minimum, and a place in your week. You can adjust your habits as your routine changes.
             </p>
           </div>
         </div>
@@ -249,6 +253,7 @@ export const HabitManagementView: React.FC = () => {
             return (
               <div
                 key={h.id}
+                style={{ borderLeft: `3px solid ${catColor}` }}
                 className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-colors ${
                   !h.is_active ? "bg-slate-50 opacity-60" : "hover:bg-slate-50/50"
                 }`}
@@ -460,7 +465,8 @@ export const HabitManagementView: React.FC = () => {
                       Full Target
                     </label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       step="any"
                       required
                       placeholder="e.g. 60, 45, 5"
@@ -476,7 +482,8 @@ export const HabitManagementView: React.FC = () => {
                         Minimum Floor Threshold
                       </label>
                       <input
-                        type="number"
+                        type="text"
+                      inputMode="decimal"
                         step="any"
                         required
                         placeholder="e.g. 15 minutes, 5 pages (partial execution threshold)"

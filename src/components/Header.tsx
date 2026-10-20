@@ -5,6 +5,7 @@ import {
   BarChart3, 
   FileText, 
   SlidersHorizontal, 
+  Flag,
   Terminal,
   RotateCcw,
   Send,
@@ -13,8 +14,8 @@ import {
 import { UserProfile, DayPublication } from "../types";
 
 interface HeaderProps {
-  activeTab: "today" | "history" | "analytics" | "review" | "habits" | "backend";
-  setActiveTab: (tab: "today" | "history" | "analytics" | "review" | "habits" | "backend") => void;
+  activeTab: "today" | "history" | "analytics" | "review" | "habits" | "goals" | "backend";
+  setActiveTab: (tab: "today" | "history" | "analytics" | "review" | "habits" | "goals" | "backend") => void;
   todayScore: number;
   onResetData: () => void;
   profile?: UserProfile | null;
@@ -38,8 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
     { id: "history" as const, label: "History", icon: Calendar },
     { id: "analytics" as const, label: "Analytics", icon: BarChart3 },
     { id: "review" as const, label: "Weekly Review", icon: FileText },
+    { id: "goals" as const, label: "Weekly Goals", icon: Flag },
     { id: "habits" as const, label: "Habits", icon: SlidersHorizontal },
-    { id: "backend" as const, label: "FastAPI Specs", icon: Terminal },
+
   ];
 
   const userName = profile?.name || "Ginika";
@@ -59,11 +61,11 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-2">
                 <h1 className="text-base font-bold text-slate-900 tracking-tight">Daily Signals</h1>
                 <span className="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-200">
-                  v1.0
+                  Your daily rhythm
                 </span>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Measure execution. Study the trend. Improve the system.
+                Small actions. Clear progress. Every day.
               </p>
             </div>
           </div>

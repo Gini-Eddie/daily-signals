@@ -1,3 +1,4 @@
+import type { WeeklyGoal } from "../components/Goals/WeeklyGoalsView";
 import {
   Category,
   Habit,
@@ -11,18 +12,34 @@ import {
   DayPublication,
 } from "../types";
 
-const API_BASE = "https://daily-signals-api.onrender.com/api";
+const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "/api";
+async function request(url: string, options: RequestInit = {}) {
+  const token = sessionStorage.getItem("daily-signals-session");
+  const res = await fetch(url, { ...options, headers: { ...options.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+  if (res.status === 401) window.dispatchEvent(new Event("session-expired"));
+  return res;
+}
+export async function authRequest(action: string, payload?: Record<string, string>) {
+  const res = await request(`${API_BASE}/auth/${action}`, payload ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) } : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Unable to complete account request");
+  return data;
+}
 
 export const api = {
+  async getWeeklyGoals(week: string): Promise<WeeklyGoal[]> { const res = await request(`${API_BASE}/weekly-goals?week_start=${week}`); if (!res.ok) throw new Error("Could not load weekly goals. Please try again."); return res.json(); },
+  async createWeeklyGoal(goal: Omit<WeeklyGoal, "id">): Promise<WeeklyGoal> { const res = await request(`${API_BASE}/weekly-goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(goal) }); if (!res.ok) throw new Error("Could not save your goal. Check the target and try again."); return res.json(); },
+  async updateWeeklyGoal(id: string, goal: Partial<WeeklyGoal>): Promise<WeeklyGoal> { const res = await request(`${API_BASE}/weekly-goals/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(goal) }); if (!res.ok) throw new Error("Could not update your goal. Please try again."); return res.json(); },
+  async deleteWeeklyGoal(id: string): Promise<void> { const res = await request(`${API_BASE}/weekly-goals/${id}`, { method: "DELETE" }); if (!res.ok) throw new Error("Could not delete your goal. Please try again."); },
   // User Profile & Mini-Authentication
   async getUserProfile(): Promise<UserProfile> {
-    const res = await fetch(`${API_BASE}/user/profile`);
+    const res = await request(`${API_BASE}/user/profile`);
     if (!res.ok) throw new Error("Failed to load user profile");
     return res.json();
   },
 
   async saveUserProfile(payload: { name: string; role?: string; motto?: string }): Promise<UserProfile> {
-    const res = await fetch(`${API_BASE}/user/profile`, {
+    const res = await request(`${API_BASE}/user/profile`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -32,7 +49,7 @@ export const api = {
   },
 
   async checkInUser(date?: string): Promise<{ name: string; checked_in_today: boolean; checkin_streak: number; message: string }> {
-    const res = await fetch(`${API_BASE}/user/checkin`, {
+    const res = await request(`${API_BASE}/user/checkin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date }),
@@ -43,7 +60,7 @@ export const api = {
 
   // Clear Day Entries (Start Fresh / Blank)
   async clearDayEntries(date?: string): Promise<{ status: string; date: string; message: string }> {
-    const res = await fetch(`${API_BASE}/entries/clear-day`, {
+    const res = await request(`${API_BASE}/entries/clear-day`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date }),
@@ -55,13 +72,13 @@ export const api = {
   // Daily Publication & Verification
   async getPublishStatus(date?: string): Promise<{ date: string; is_published: boolean; publication: DayPublication | null }> {
     const url = date ? `${API_BASE}/publish/status?date=${date}` : `${API_BASE}/publish/status`;
-    const res = await fetch(url);
+    const res = await request(url);
     if (!res.ok) throw new Error("Failed to load publication status");
     return res.json();
   },
 
   async publishDay(date?: string, notes?: string): Promise<DayPublication> {
-    const res = await fetch(`${API_BASE}/publish`, {
+    const res = await request(`${API_BASE}/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, notes }),
@@ -73,26 +90,26 @@ export const api = {
   // Dashboard & History
   async getDashboard(dateStr?: string): Promise<TodayDashboard> {
     const url = dateStr ? `${API_BASE}/dashboard/today?date=${dateStr}` : `${API_BASE}/dashboard/today`;
-    const res = await fetch(url);
+    const res = await request(url);
     if (!res.ok) throw new Error("Failed to load dashboard data");
     return res.json();
   },
 
   async getHistory(dateStr: string): Promise<TodayDashboard> {
-    const res = await fetch(`${API_BASE}/history/${dateStr}`);
+    const res = await request(`${API_BASE}/history/${dateStr}`);
     if (!res.ok) throw new Error(`Failed to load history for ${dateStr}`);
     return res.json();
   },
 
   // Categories
   async getCategories(): Promise<Category[]> {
-    const res = await fetch(`${API_BASE}/categories`);
+    const res = await request(`${API_BASE}/categories`);
     if (!res.ok) throw new Error("Failed to load categories");
     return res.json();
   },
 
   async createCategory(payload: { name: string; color?: string }): Promise<Category> {
-    const res = await fetch(`${API_BASE}/categories`, {
+    const res = await request(`${API_BASE}/categories`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -105,19 +122,19 @@ export const api = {
   },
 
   async deleteCategory(id: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/categories/${id}`, { method: "DELETE" });
+    const res = await request(`${API_BASE}/categories/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete category");
   },
 
   // Habits
   async getHabits(includeArchived = false): Promise<Habit[]> {
-    const res = await fetch(`${API_BASE}/habits?include_archived=${includeArchived}`);
+    const res = await request(`${API_BASE}/habits?include_archived=${includeArchived}`);
     if (!res.ok) throw new Error("Failed to load habits");
     return res.json();
   },
 
   async createHabit(habit: Partial<Habit>): Promise<Habit> {
-    const res = await fetch(`${API_BASE}/habits`, {
+    const res = await request(`${API_BASE}/habits`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(habit),
@@ -130,7 +147,7 @@ export const api = {
   },
 
   async updateHabit(id: number, habit: Partial<Habit>): Promise<Habit> {
-    const res = await fetch(`${API_BASE}/habits/${id}`, {
+    const res = await request(`${API_BASE}/habits/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(habit),
@@ -143,7 +160,7 @@ export const api = {
   },
 
   async deleteHabit(id: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/habits/${id}`, { method: "DELETE" });
+    const res = await request(`${API_BASE}/habits/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete habit");
   },
 
@@ -155,7 +172,7 @@ export const api = {
     binary_completed?: boolean;
     notes?: string | null;
   }): Promise<HabitEntry> {
-    const res = await fetch(`${API_BASE}/habit-entries`, {
+    const res = await request(`${API_BASE}/habit-entries`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -167,7 +184,7 @@ export const api = {
   // Today's 3 Signals
   async getSignals(dateStr?: string): Promise<DailySignal[]> {
     const url = dateStr ? `${API_BASE}/daily-signals?date=${dateStr}` : `${API_BASE}/daily-signals`;
-    const res = await fetch(url);
+    const res = await request(url);
     if (!res.ok) throw new Error("Failed to load daily signals");
     return res.json();
   },
@@ -181,7 +198,7 @@ export const api = {
     target_quantity?: string | null;
     is_completed?: boolean;
   }): Promise<DailySignal> {
-    const res = await fetch(`${API_BASE}/daily-signals`, {
+    const res = await request(`${API_BASE}/daily-signals`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -194,7 +211,7 @@ export const api = {
   },
 
   async updateSignal(id: number, payload: Partial<DailySignal>): Promise<DailySignal> {
-    const res = await fetch(`${API_BASE}/daily-signals/${id}`, {
+    const res = await request(`${API_BASE}/daily-signals/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -204,14 +221,14 @@ export const api = {
   },
 
   async deleteSignal(id: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/daily-signals/${id}`, { method: "DELETE" });
+    const res = await request(`${API_BASE}/daily-signals/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete signal");
   },
 
   // Daily Reflection
   async getReflection(dateStr?: string): Promise<DailyReflection | null> {
     const url = dateStr ? `${API_BASE}/reflections?date=${dateStr}` : `${API_BASE}/reflections`;
-    const res = await fetch(url);
+    const res = await request(url);
     if (!res.ok) throw new Error("Failed to load reflection");
     return res.json();
   },
@@ -222,7 +239,7 @@ export const api = {
     what_interfered?: string;
     what_to_adjust?: string;
   }): Promise<DailyReflection> {
-    const res = await fetch(`${API_BASE}/reflections`, {
+    const res = await request(`${API_BASE}/reflections`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -233,25 +250,25 @@ export const api = {
 
   // Weekly Analytics & Review
   async getWeeklyAnalytics(weekOffset = 0): Promise<WeeklyAnalytics> {
-    const res = await fetch(`${API_BASE}/analytics/weekly?week_offset=${weekOffset}`);
+    const res = await request(`${API_BASE}/analytics/weekly?week_offset=${weekOffset}`);
     if (!res.ok) throw new Error("Failed to load weekly analytics");
     return res.json();
   },
 
   async getWeeklyReview(weekOffset = 0): Promise<WeeklyReview> {
-    const res = await fetch(`${API_BASE}/analytics/review?week_offset=${weekOffset}`);
+    const res = await request(`${API_BASE}/analytics/review?week_offset=${weekOffset}`);
     if (!res.ok) throw new Error("Failed to load weekly review");
     return res.json();
   },
 
   // System & Reset
   async resetStarterData(): Promise<void> {
-    const res = await fetch(`${API_BASE}/reset-starter-data`, { method: "POST" });
+    const res = await request(`${API_BASE}/reset-starter-data`, { method: "POST" });
     if (!res.ok) throw new Error("Failed to reset data");
   },
 
   async getBackendCode(): Promise<Record<string, string>> {
-    const res = await fetch(`${API_BASE}/backend-code`);
+    const res = await request(`${API_BASE}/backend-code`);
     if (!res.ok) throw new Error("Failed to fetch backend code");
     return res.json();
   },

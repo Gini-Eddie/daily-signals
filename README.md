@@ -21,14 +21,15 @@
   - **Binary Habits**: Completed or not (e.g., Morning Prayer, Journaling, Planning).
   - **Quantitative Habits**: Exact units and reps (e.g., Push-ups, Sit-ups, Prospect Calls, Job Applications).
   - **Floor Minimum & Full Target Habits**: Floor protects against total zero; full target drives mastery (e.g., Exercise, AI Engineering Block, Reading).
-- **Fast Daily Logging**: Quick `+` / `-` increment buttons, direct number entry, and one-tap binary completion with instant auto-save.
+- **Fast Daily Logging**: Quick `+` / `-` increment buttons, direct number entry, and one-tap binary completion with values saved when editing finishes.
 
 ### 2. Daily Priority Signals
 - Focus on the top 3 highest-leverage actions for the current date.
 - Mark signals complete as they are executed throughout the day.
 
-### 3. Personal Intake & Mini-Authentication
-- **Non-Complex Intake**: Personalize your profile with your name (e.g., Ginika), role, and execution motto without cumbersome password friction.
+### 3. Personal Account & Check-In
+- **Personal account**: Protect this installation with email and password. Recover access with your private recovery code. See [deployment instructions](DEPLOYMENT.md) before deploying.
+- **Profile**: Personalize your name, role, and execution motto.
 - **Daily Check-In**: One-tap check-in with consecutive streak tracking.
 - **Blank Starting State**: Reset habit values to zero for the day at any time to start fresh.
 
@@ -43,9 +44,10 @@
   3. *What will you adjust tomorrow?*
 
 ### 6. Habit History & Day Explorer
-- Historical calendar navigation to inspect any past date's execution score, completed signals, and logged habit values.
+- Historical calendar navigation to inspect and edit any past date’s habits, notes, signals, and reflection without resetting the editor.
 
 ### 7. Weekly Analytics & Review
+- **Weekly Goals**: Plan your main goals, set a target and unit, update progress, and see each goal's completion percentage and weekly overall progress. Review past weeks or plan ahead.
 - **7-Day Trend Visualizations**: Day-by-day score graphs, floor protection counts, and habit completion heatmaps.
 - **Weekly Review Protocol**: Aggregate score, best execution day, most consistent habits, and strategic reflection adjustments.
 

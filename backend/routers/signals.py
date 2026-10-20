@@ -21,7 +21,7 @@ def get_current_user_id() -> int:
 
 @router.get("", response_model=List[DailySignalResponse])
 def get_signals_for_date(
-    target_date: date = Query(default_factory=date.today),
+    target_date: date = Query(default_factory=date.today, alias="date"),
     db: Session = Depends(get_db)
 ):
     user_id = get_current_user_id()
@@ -42,7 +42,8 @@ def create_signal(payload: DailySignalCreate, db: Session = Depends(get_db)):
         DailySignal.signal_date == payload.signal_date
     ).count()
 
-    if count >= 3:
+    slot_exists = db.query(DailySignal).filter(DailySignal.user_id == user_id, DailySignal.signal_date == payload.signal_date, DailySignal.order_position == payload.order_position).first()
+    if count >= 3 and not slot_exists:
         raise HTTPException(
             status_code=400,
             detail="Maximum of 3 priority signals allowed per day to preserve extreme daily focus."

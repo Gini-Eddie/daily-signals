@@ -134,13 +134,13 @@ export const SignalsSection: React.FC<SignalsSectionProps> = ({
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center space-x-2">
-              <span>Today's 3 Signals</span>
+              <span>Priority signals</span>
               <span className="text-xs font-mono-num font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                 {completedCount}/3 Secured
               </span>
             </h3>
             <p className="text-xs text-slate-500">
-              The three most critical controllable daily actions for today
+              Your three most important actions for this day
             </p>
           </div>
         </div>

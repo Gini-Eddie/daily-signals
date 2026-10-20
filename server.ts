@@ -1,15 +1,20 @@
 import express, { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import "dotenv/config";
+import { installAuth } from "./auth";
+import { installWeeklyGoals } from "./weekly-goals";
 import { createServer as createViteServer } from "vite";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+installAuth(app);
+installWeeklyGoals(app);
 
 // Persistent store file path
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "store.json");
 
 if (!fs.existsSync(DATA_DIR)) {
@@ -152,11 +157,8 @@ function loadStore(): StoreData {
 }
 
 function saveStore(data: StoreData) {
-  try {
-    fs.writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
-  } catch (e) {
-    console.error("Failed to write store.json", e);
-  }
+  fs.writeFileSync(STORE_PATH + ".tmp", JSON.stringify(data, null, 2), "utf-8");
+  fs.renameSync(STORE_PATH + ".tmp", STORE_PATH);
 }
 
 let db = loadStore();
@@ -397,7 +399,17 @@ app.get("/api/habits", (req, res) => {
   res.json(result);
 });
 
+function validateHabit(h: any): string | null {
+  if (typeof h.name !== "string" || !h.name.trim()) return "Enter a habit name.";
+  if (!["BINARY", "QUANTITY", "MINIMUM_TARGET"].includes(h.tracking_type)) return "Choose a valid tracking type.";
+  if (!Array.isArray(h.applicable_days) || !h.applicable_days.length || h.applicable_days.some((d: number) => !Number.isInteger(d) || d < 0 || d > 6)) return "Choose at least one valid scheduled day.";
+  if (h.tracking_type !== "BINARY" && (typeof h.target_value !== "number" || !Number.isFinite(h.target_value) || h.target_value <= 0)) return "Set a target greater than zero.";
+  if (h.tracking_type === "MINIMUM_TARGET" && (typeof h.minimum_value !== "number" || !Number.isFinite(h.minimum_value) || h.minimum_value < 0 || h.minimum_value > h.target_value)) return "Minimum must be between zero and your target.";
+  return null;
+}
 app.post("/api/habits", (req, res) => {
+  const validation = validateHabit({ applicable_days: [0,1,2,3,4,5,6], tracking_type: "BINARY", ...req.body });
+  if (validation) return res.status(400).json({ detail: validation });
   const { name, description, category_id, tracking_type, unit, minimum_value, target_value, applicable_days, is_active } = req.body;
   if (!name) return res.status(400).json({ detail: "Habit name is required" });
 
@@ -438,6 +450,8 @@ app.put("/api/habits/:id", (req, res) => {
   if (habitIndex === -1) return res.status(404).json({ detail: "Habit not found" });
 
   const existing = db.habits[habitIndex];
+  const validation = validateHabit({ ...existing, ...req.body });
+  if (validation) return res.status(400).json({ detail: validation });
   const updated = {
     ...existing,
     ...req.body,
@@ -463,6 +477,7 @@ app.delete("/api/habits/:id", (req, res) => {
 // Fast Daily Logging (Habit Entries)
 app.post("/api/habit-entries", (req, res) => {
   const { habit_id, entry_date, actual_value, binary_completed, notes } = req.body;
+  if (actual_value !== undefined && (typeof actual_value !== "number" || !Number.isFinite(actual_value) || actual_value < 0)) return res.status(400).json({ detail: "Enter a number of zero or more." });
   if (!habit_id || !entry_date) {
     return res.status(400).json({ detail: "habit_id and entry_date are required" });
   }
@@ -633,7 +648,7 @@ function buildDashboardForDate(targetDateStr: string) {
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const dayName = dayNames[weekday];
 
-  const activeHabits = db.habits.filter(h => h.is_active !== false);
+  const activeHabits = db.habits.filter(h => h.is_active !== false || db.entries.some(e => e.habit_id === h.id && e.entry_date === targetDateStr));
   const categoryMap = new Map(db.categories.map(c => [c.id, c]));
 
   const entriesForDate = db.entries.filter(e => e.entry_date === targetDateStr);

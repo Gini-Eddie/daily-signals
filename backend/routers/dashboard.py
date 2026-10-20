@@ -4,10 +4,12 @@ Daily Signals - Dashboard & History Router
 from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from database import get_db
 from models import Habit, HabitEntry, DailySignal, DailyReflection, TrackingType
 from schemas import TodayDashboardResponse, HabitWithExecution, HabitResponse, HabitEntryResponse
 from services.execution import evaluate_habit_status, calculate_daily_execution_score
+from auth import read_state
 
 router = APIRouter(tags=["Dashboard & History"])
 
@@ -18,7 +20,7 @@ def get_current_user_id() -> int:
 
 @router.get("/dashboard/today", response_model=TodayDashboardResponse)
 def get_today_dashboard(
-    target_date: date = Query(default_factory=date.today),
+    target_date: date = Query(default_factory=date.today, alias="date"),
     db: Session = Depends(get_db)
 ):
     user_id = get_current_user_id()
@@ -28,7 +30,7 @@ def get_today_dashboard(
     # Fetch active habits for user
     habits = db.query(Habit).filter(
         Habit.user_id == user_id,
-        Habit.is_active == True
+        or_(Habit.is_active == True, Habit.id.in_(db.query(HabitEntry.habit_id).filter(HabitEntry.entry_date == target_date)))
     ).order_by(Habit.display_order, Habit.id).all()
 
     # Fetch entries for target_date
@@ -90,7 +92,8 @@ def get_today_dashboard(
         full_target_progress_pct=metrics["target_progress_pct"],
         signals=signals,
         habits=habits_with_exec,
-        reflection=reflection
+        reflection=reflection,
+        publication=read_state("publication:" + target_date.isoformat())
     )
 
 

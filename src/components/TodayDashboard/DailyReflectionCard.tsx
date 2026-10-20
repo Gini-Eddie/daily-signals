@@ -30,7 +30,7 @@ export const DailyReflectionCard: React.FC<DailyReflectionCardProps> = ({
       setInterfered("");
       setToAdjust("");
     }
-  }, [reflection, currentDate]);
+  }, [reflection?.id, currentDate]);
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

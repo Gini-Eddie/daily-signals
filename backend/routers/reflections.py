@@ -23,7 +23,7 @@ def get_current_user_id() -> int:
 
 @router.get("", response_model=Optional[DailyReflectionResponse])
 def get_reflection_for_date(
-    target_date: date = Query(default_factory=date.today),
+    target_date: date = Query(default_factory=date.today, alias="date"),
     db: Session = Depends(get_db)
 ):
     user_id = get_current_user_id()
